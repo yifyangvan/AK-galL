@@ -21,7 +21,7 @@ jobs:
 
       - name: Run GALL.mjs script
         run: |
-          node gall.mjs
+          node GALL.mjs
 
       - name: Commit and push result
         env:
