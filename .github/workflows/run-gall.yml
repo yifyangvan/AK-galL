@@ -28,11 +28,14 @@ jobs:
           node gall.mjs > result.log
           cat result.log
 
-      - name: Create Gist with results
-        uses: peter-evans/create-gist@v3
-        with:
-          description: "gall.mjs script run result"
-          files: |
-            result.log: result.log
-        env:
-          token: ${{ secrets.token }}
+      - name: Create Gist with results via API
+        run: |
+          curl -X POST -H "Authorization: token ${{ secrets.token }}" -d '{
+            "description": "gall.mjs script run result",
+            "public": true,
+            "files": {
+              "result.log": {
+                "content": "$(cat result.log)"
+              }
+            }
+          }' https://api.github.com/gists
