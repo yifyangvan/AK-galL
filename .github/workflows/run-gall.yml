@@ -22,4 +22,17 @@ jobs:
           node-version: '20'
 
       - name: Run gall.mjs
-        run: node gall.mjs
+        id: run_gall
+        run: |
+          echo "Running gall.mjs..."
+          node gall.mjs > result.log
+          cat result.log
+
+      - name: Create Gist with results
+        uses: peter-evans/create-gist@v1
+        with:
+          description: "gall.mjs script run result"
+          files: |
+            result.log: result.log
+        env:
+          token: ${{ secrets.token }}
