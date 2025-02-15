@@ -1,35 +1,52 @@
-name: Run GALL.mjs script
+name: Run gall.mjs and commit result
 
 on:
-  schedule:
-    # 每天中国时区0点运行
-    - cron: '0 16 * * *' # 每天0点运行，cron表达式使用UTC时间
+  push:
+    branches:
+      - main  # 监听 main 分支的提交
   workflow_dispatch:  # 允许手动触发工作流
 
 jobs:
-  run:
+  run-gall:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Check out code
+      uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '22.9'  # 更新为所需的 Node.js 版本
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '22.9'
 
-      - name: Run GALL.mjs script
-        run: |
-          node GALL.mjs
+    - name: Install dependencies
+      run: |
+        npm install
 
-      - name: Commit and push result
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # 使用Secrets中的GH_TOKEN
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          git add GAll.txt
-          git commit -m "Auto-generated GALL.txt" || echo "No changes to commit"
-          git push origin HEAD:main
+    - name: Run gall.mjs script
+      run: |
+        node gall.mjs
+
+    - name: Get insertions count from git log
+      run: |
+        # 提取提交日志中的插入行数（插入节点数）
+        INSERTIONS=$(git log -1 --stat | grep -oP '\d+(?= insertions\(\+\))' || echo "0")
+        echo "Insertions: $INSERTIONS"
+        echo "INSERTIONS=$INSERTIONS" >> $GITHUB_ENV
+
+    - name: Rename file based on insertions
+      run: |
+        FILE_NAME="GAll-${{ env.INSERTIONS }}.txt"
+        mv GAll.txt "$FILE_NAME"
+        echo "Renamed file to $FILE_NAME"
+
+    - name: Commit and push result
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+        git add $FILE_NAME
+        git commit -m "Auto-generated $FILE_NAME" || echo "No changes to commit"
+        git push origin HEAD:main
