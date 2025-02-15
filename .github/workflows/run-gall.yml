@@ -1,4 +1,4 @@
-name: Run gall.mjs and Create Gist
+name: Run gall.mjs and Commit Result to Repository
 
 on:
   push:
@@ -41,33 +41,11 @@ jobs:
             echo "This is a generated file." > GALL.txt  # 自动创建文件并写入内容
           fi
 
-      - name: Read GALL.txt file content
-        id: read_txt
+      - name: Commit GALL.txt to repository
         run: |
-          GENERATED_FILE="GALL.txt"
-          CONTENT=$(cat $GENERATED_FILE)  # 读取 GALL.txt 文件的内容
-          echo "File content: $CONTENT"
-          echo "::set-output name=content::$CONTENT"  # 将文件内容传递给下一个步骤
-
-      - name: Create Gist with GALL.txt content
-        run: |
-          CONTENT="${{ steps.read_txt.outputs.content }}"
-          curl -X POST -H "Authorization: token ${{ secrets.token }}" -d "{
-            \"description\": \"Generated text from gall.mjs\",
-            \"public\": true,
-            \"files\": {
-              \"GALL.txt\": {
-                \"content\": \"$CONTENT\"
-              }
-            }
-          }" https://api.github.com/gists
-
-      - name: Delete GALL.txt file
-        run: |
-          GENERATED_FILE="GALL.txt"
-          if [ -f "$GENERATED_FILE" ]; then
-            rm $GENERATED_FILE
-            echo "$GENERATED_FILE deleted."
-          else
-            echo "$GENERATED_FILE not found."
-          fi
+          echo "Committing GALL.txt to the repository..."
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add GALL.txt  # 添加 GALL.txt 文件
+          git commit -m "Add generated GALL.txt file"  # 提交
+          git push origin main  # 推送到主分支
