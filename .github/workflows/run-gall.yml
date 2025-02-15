@@ -3,15 +3,12 @@ name: Run gall.mjs Script and Save Results
 on:
   push:
     branches:
-      - main  # 或者其他你想要监听的分支
+      - main
   pull_request:
     branches:
-      - main  # 触发 PR 时运行
+      - main
   schedule:
     - cron: '0 16 * * *'  # 每天 UTC 16:00 触发，即中国时区 0 点
-    # 说明：
-    # cron 的格式：分钟 小时 日 月 星期
-    # '0 16 * * *' 表示每天 UTC 16:00 触发，等同于中国时区的 0 点
 
 jobs:
   run_script:
@@ -25,9 +22,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16'  # 设置 Node.js 版本
-
-      - name: Install dependencies
-        run: npm install  # 如果有依赖项需要安装
 
       - name: Run gall.mjs script
         run: node gall.mjs  # 运行 gall.mjs 脚本
