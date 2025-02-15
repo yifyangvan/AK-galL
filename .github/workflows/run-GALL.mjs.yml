@@ -19,9 +19,10 @@ jobs:
       with:
         node-version: '22.9'
 
-    - name: Install dependencies
-      run: |
-        npm install
+    # 注释掉 npm install
+    # - name: Install dependencies
+    #   run: |
+    #     npm install
 
     - name: Run gall.mjs script
       run: |
