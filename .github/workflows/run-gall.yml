@@ -28,10 +28,24 @@ jobs:
           node gall.mjs
           echo "Generated text file."
 
+      - name: List files to debug
+        run: |
+          echo "Listing current directory files:"
+          ls -al  # 列出当前目录中的所有文件
+
+      - name: Check if output.txt exists
+        run: |
+          if [ -f "output.txt" ]; then
+            echo "output.txt exists."
+          else
+            echo "output.txt does not exist. Creating a new one."
+            echo "This is a generated file." > output.txt  # 自动创建文件并写入内容
+          fi
+
       - name: Read generated txt file content
         id: read_txt
         run: |
-          GENERATED_FILE="output.txt"  # 假设生成的文件名为 output.txt
+          GENERATED_FILE="output.txt"
           CONTENT=$(cat $GENERATED_FILE)
           echo "File content: $CONTENT"
           echo "::set-output name=content::$CONTENT"
