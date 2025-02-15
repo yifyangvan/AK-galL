@@ -14,7 +14,7 @@ jobs:
           node-version: 16
       - run: node gall.mjs
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # 更新到v4版本
         with:
           name: GAll.txt
           path: GAll.txt
