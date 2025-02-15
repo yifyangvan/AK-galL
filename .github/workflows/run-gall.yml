@@ -19,10 +19,6 @@ jobs:
         with:
           node-version: '22.9'  # 更新为所需的 Node.js 版本
 
-      - name: Install dependencies
-        run: |
-          npm install
-
       - name: Run gall.mjs script
         run: |
           node gall.mjs
