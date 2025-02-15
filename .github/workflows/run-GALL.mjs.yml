@@ -2,13 +2,8 @@ name: Run GALL.mjs script
 
 on:
   schedule:
-    # 每天中国时区0点运行
-    - cron: '0 16 * * *' # 每天0点运行，cron表达式使用UTC时间
-  workflow_dispatch:  # 允许手动触发工作流
-  workflow_run:  # 确保在其他工作流完成后触发
-    workflows: ["Main Workflow"]  # 这里可以替换为具体的工作流名称
-    types:
-      - completed
+    - cron: '0 16 * * *'  # 每天中国时区0点运行（注意：使用的是UTC时间）
+  workflow_dispatch:  # 手动触发工作流
 
 jobs:
   run:
@@ -21,31 +16,36 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '22.9'  # 更新为所需的 Node.js 版本
+          node-version: '22.9'
 
-      - name: Run GALL.mjs script
+      - name: Run gall.mjs script
         run: |
           node GALL.mjs
 
       - name: Get number of insertions in git log
         id: get_insertions
         run: |
-          # 获取插入的行数（节点数）
           insertions=$(git log --oneline --stat | grep 'insertions' | awk '{sum += $4} END {print sum}')
           echo "insertions=$insertions" >> $GITHUB_ENV
 
-      - name: Rename GALL.txt based on insertions
+      - name: Get current date and time
+        id: get_datetime
         run: |
-          # 重命名 GALL.txt 文件
-          mv GALL.txt "GALL_${{ env.insertions }}_nodes.txt"
-      
+          current_datetime=$(date "+%Y-%m-%d %H:%M")
+          echo "current_datetime=$current_datetime" >> $GITHUB_ENV
+
       - name: Commit and push result
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # 使用Secrets中的GH_TOKEN
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-          git add "GALL_${{ env.insertions }}_nodes.txt"
-          git commit -m "Auto-generated GALL_${{ env.insertions }}_nodes.txt" || echo "No changes to commit"
+          
+          # 创建推送消息
+          message="更新 ${insertions} 个节点 (${{ env.current_datetime }})"
+          
+          # 添加修改、提交并推送
+          git add GAll.txt
+          git commit -m "$message" || echo "No changes to commit"
           git push origin HEAD:main
