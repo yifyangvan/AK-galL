@@ -1,4 +1,4 @@
-name: Run gall.mjs script
+name: Run GALL.mjs script
 
 on:
   schedule:
@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '22.9'  # 更新为所需的 Node.js 版本
 
-      - name: Run gall.mjs script
+      - name: Run GALL.mjs script
         run: |
           node gall.mjs
 
