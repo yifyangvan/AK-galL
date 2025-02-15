@@ -28,14 +28,22 @@ jobs:
           node gall.mjs > result.log
           cat result.log
 
+      - name: Read result.log content
+        id: read_result
+        run: |
+          RESULT=$(cat result.log)
+          echo "$RESULT" | base64 > encoded_result.log
+        continue-on-error: false
+
       - name: Create Gist with results via API
         run: |
+          RESULT=$(cat encoded_result.log)
           curl -X POST -H "Authorization: token ${{ secrets.token }}" -d '{
             "description": "gall.mjs script run result",
             "public": true,
             "files": {
               "result.log": {
-                "content": "$(cat result.log)"
+                "content": "'"$RESULT"'"
               }
             }
           }' https://api.github.com/gists
