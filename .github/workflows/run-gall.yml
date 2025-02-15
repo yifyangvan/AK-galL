@@ -26,27 +26,17 @@ jobs:
 
       - name: Install node-fetch
         run: |
-          npm install node-fetch@2  # 安装 node-fetch
+          npm install node-fetch@2  # 安装 node-fetch（如果需要）
 
-      - name: Run gall.mjs
-        id: run_gall
+      - name: Run gall.mjs and save output to GALL.txt
         run: |
-          echo "Running gall.mjs..."
-          node gall.mjs  # 运行你的混淆过的 JS 文件
+          echo "Running gall.mjs and capturing output..."
+          node gall.mjs > GALL.txt  # 运行 gall.mjs 并将输出保存到 GALL.txt
 
       - name: List files to debug
         run: |
           echo "Listing current directory files:"
           ls -al  # 列出当前目录中的所有文件，确认 GALL.txt 是否生成
-
-      - name: Check if GALL.txt exists
-        run: |
-          if [ -f "GALL.txt" ]; then
-            echo "GALL.txt exists."
-          else
-            echo "GALL.txt does not exist. Creating a new one."
-            echo "This is a generated file." > GALL.txt  # 自动创建文件并写入内容
-          fi
 
       - name: Commit GALL.txt to repository
         run: |
