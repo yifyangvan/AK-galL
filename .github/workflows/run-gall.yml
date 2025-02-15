@@ -1,4 +1,4 @@
-name: Run gall.mjs
+name: Run gall.mjs and Create Gist
 
 on:
   push:
@@ -25,47 +25,46 @@ jobs:
         id: run_gall
         run: |
           echo "Running gall.mjs..."
-          node gall.mjs
-          echo "Generated text file."
+          node gall.mjs  # 运行你的混淆过的 JS 文件
 
       - name: List files to debug
         run: |
           echo "Listing current directory files:"
-          ls -al  # 列出当前目录中的所有文件
+          ls -al  # 列出当前目录中的所有文件，确认 GALL.txt 是否生成
 
-      - name: Check if output.txt exists
+      - name: Check if GALL.txt exists
         run: |
-          if [ -f "output.txt" ]; then
-            echo "output.txt exists."
+          if [ -f "GALL.txt" ]; then
+            echo "GALL.txt exists."
           else
-            echo "output.txt does not exist. Creating a new one."
-            echo "This is a generated file." > output.txt  # 自动创建文件并写入内容
+            echo "GALL.txt does not exist. Creating a new one."
+            echo "This is a generated file." > GALL.txt  # 自动创建文件并写入内容
           fi
 
-      - name: Read generated txt file content
+      - name: Read GALL.txt file content
         id: read_txt
         run: |
-          GENERATED_FILE="output.txt"
-          CONTENT=$(cat $GENERATED_FILE)
+          GENERATED_FILE="GALL.txt"
+          CONTENT=$(cat $GENERATED_FILE)  # 读取 GALL.txt 文件的内容
           echo "File content: $CONTENT"
-          echo "::set-output name=content::$CONTENT"
+          echo "::set-output name=content::$CONTENT"  # 将文件内容传递给下一个步骤
 
-      - name: Create Gist with txt file content
+      - name: Create Gist with GALL.txt content
         run: |
           CONTENT="${{ steps.read_txt.outputs.content }}"
           curl -X POST -H "Authorization: token ${{ secrets.token }}" -d "{
             \"description\": \"Generated text from gall.mjs\",
             \"public\": true,
             \"files\": {
-              \"output.txt\": {
+              \"GALL.txt\": {
                 \"content\": \"$CONTENT\"
               }
             }
           }" https://api.github.com/gists
 
-      - name: Delete generated txt file
+      - name: Delete GALL.txt file
         run: |
-          GENERATED_FILE="output.txt"
+          GENERATED_FILE="GALL.txt"
           if [ -f "$GENERATED_FILE" ]; then
             rm $GENERATED_FILE
             echo "$GENERATED_FILE deleted."
