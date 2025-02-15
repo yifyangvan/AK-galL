@@ -1,51 +1,20 @@
-name: Run gall.mjs and Commit Result to Repository
-
+name: My Workflow
 on:
-  push:
-    branches:
-      - main
   schedule:
-    - cron: '0 0 * * *'  # 每天午夜运行
-  workflow_dispatch:      # 支持手动触发
-
+    - cron: '0 0 * * *' # 每天0点运行
+  push: # 保留push触发器，方便手动触发
+    branches: [main]
 jobs:
-  run-script:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '20'
-
-      - name: Run gall.mjs
-        id: run_gall
-        run: |
-          echo "Running gall.mjs..."
-          node gall.mjs  # 运行你的混淆过的 JS 文件
-
-      - name: List files to debug
-        run: |
-          echo "Listing current directory files:"
-          ls -al  # 列出当前目录中的所有文件，确认 GALL.txt 是否生成
-
-      - name: Check if GALL.txt exists
-        run: |
-          if [ -f "GALL.txt" ]; then
-            echo "GALL.txt exists."
-          else
-            echo "GALL.txt does not exist. Creating a new one."
-            echo "This is a generated file." > GALL.txt  # 自动创建文件并写入内容
-          fi
-
-      - name: Commit GALL.txt to repository
-        run: |
-          echo "Committing GALL.txt to the repository..."
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add GALL.txt  # 添加 GALL.txt 文件
-          git commit -m "Add generated GALL.txt file"  # 提交
-          git push origin main  # 推送到主分支
+          node-version: 16
+      - run: node gall.mjs
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: GAll.txt
+          path: GAll.txt
