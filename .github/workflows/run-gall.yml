@@ -26,42 +26,35 @@ jobs:
         run: |
           echo "Running gall.mjs..."
           node gall.mjs
-          echo "Directory and files generated."
+          echo "Generated text file."
 
-      - name: List files in generated folder
-        id: list_files
+      - name: Read generated txt file content
+        id: read_txt
         run: |
-          # 确保目录已创建
-          GENERATED_DIR="your_generated_folder"
-          echo "Listing files in $GENERATED_DIR"
-          ls $GENERATED_DIR
-          echo "::set-output name=files::$(ls $GENERATED_DIR)"
+          GENERATED_FILE="output.txt"  # 假设生成的文件名为 output.txt
+          CONTENT=$(cat $GENERATED_FILE)
+          echo "File content: $CONTENT"
+          echo "::set-output name=content::$CONTENT"
 
-      - name: Create Gist with folder contents
+      - name: Create Gist with txt file content
         run: |
-          GENERATED_DIR="your_generated_folder"
-          FILES=$(echo "${{ steps.list_files.outputs.files }}" | tr ' ' '\n')
-
-          # 创建一个空的 Gist 数据结构
-          GIST_FILES=""
-          
-          # 遍历文件夹中的所有文件
-          for FILE in $FILES; do
-            CONTENT=$(cat "$GENERATED_DIR/$FILE")
-            GIST_FILES="$GIST_FILES
-            \"$FILE\": {
-              \"content\": \"$CONTENT\"
-            },"
-          done
-          
-          # 去掉最后的逗号
-          GIST_FILES=$(echo "$GIST_FILES" | sed '$s/,$//')
-
-          # 推送到 Gist
+          CONTENT="${{ steps.read_txt.outputs.content }}"
           curl -X POST -H "Authorization: token ${{ secrets.token }}" -d "{
-            \"description\": \"gall.mjs generated content\",
+            \"description\": \"Generated text from gall.mjs\",
             \"public\": true,
             \"files\": {
-              $GIST_FILES
+              \"output.txt\": {
+                \"content\": \"$CONTENT\"
+              }
             }
           }" https://api.github.com/gists
+
+      - name: Delete generated txt file
+        run: |
+          GENERATED_FILE="output.txt"
+          if [ -f "$GENERATED_FILE" ]; then
+            rm $GENERATED_FILE
+            echo "$GENERATED_FILE deleted."
+          else
+            echo "$GENERATED_FILE not found."
+          fi
