@@ -1,48 +1,38 @@
-name: Run gall.mjs and Commit Result to Repository
+name: Run gall.mjs Script and Save Results
 
 on:
   push:
     branches:
-      - main
+      - main  # 或者其他你想要监听的分支
+  pull_request:
+    branches:
+      - main  # 触发 PR 时运行
   schedule:
-    - cron: '0 0 * * *'  # 每天午夜运行
-  workflow_dispatch:      # 支持手动触发
-
-permissions:
-  contents: write  # 显式允许写入仓库内容
+    - cron: '0 16 * * *'  # 每天 UTC 16:00 触发，即中国时区 0 点
 
 jobs:
-  run-script:
-    runs-on: ubuntu-latest
+  run_script:
+    runs-on: ubuntu-latest  # 运行环境选择 Ubuntu
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3  # 获取仓库代码
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '16'  # 设置 Node.js 版本
 
-      - name: Install node-fetch
-        run: |
-          npm install node-fetch@2  # 安装 node-fetch（如果需要）
+      - name: Run gall.mjs script
+        run: node gall.mjs  # 运行 gall.mjs 脚本
 
-      - name: Run gall.mjs and save output to GALL.txt
-        run: |
-          echo "Running gall.mjs and capturing output..."
-          node gall.mjs > GALL.txt  # 运行 gall.mjs 并将输出保存到 GALL.txt
+      - name: List files to verify GALL.txt exists
+        run: ls -al  # 列出文件，检查 GALL.txt 是否存在
 
-      - name: List files to debug
+      - name: Commit and push the result (GALL.txt)
         run: |
-          echo "Listing current directory files:"
-          ls -al  # 列出当前目录中的所有文件，确认 GALL.txt 是否生成
-
-      - name: Commit GALL.txt to repository
-        run: |
-          echo "Committing GALL.txt to the repository..."
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add GALL.txt  # 添加 GALL.txt 文件
-          git commit -m "Add generated GALL.txt file"  # 提交
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main  # 使用 GITHUB_TOKEN 推送到仓库
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add GALL.txt  # 将生成的 GALL.txt 文件添加到 Git
+          git commit -m "Add GALL.txt result" || echo "No changes to commit"  # 如果没有变化，跳过提交
+          git push origin main  # 推送到主分支
