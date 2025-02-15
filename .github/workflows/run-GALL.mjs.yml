@@ -28,10 +28,10 @@ jobs:
           insertions=$(git log --oneline --stat | grep 'insertions' | awk '{sum += $4} END {print sum}')
           echo "insertions=$insertions" >> $GITHUB_ENV
 
-      - name: Get current date and time
+      - name: Get current date and time in Beijing
         id: get_datetime
         run: |
-          current_datetime=$(date "+%Y-%m-%d %H:%M")
+          current_datetime=$(TZ="Asia/Shanghai" date "+%Y-%m-%d %H:%M")
           echo "current_datetime=$current_datetime" >> $GITHUB_ENV
 
       - name: Commit and push result
