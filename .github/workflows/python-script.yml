@@ -1,0 +1,45 @@
+name: Run Python Script
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # 每天的中国时间凌晨1点执行
+  workflow_dispatch:  # 支持手动触发
+  push:
+    branches:
+      - main  # 当推送到主分支时触发工作流
+      - 'refs/heads/*'  # 如果你希望针对其他分支的提交也执行，可以取消注释此行
+
+jobs:
+  run_script:
+    runs-on: ubuntu-latest  # 选择 Ubuntu 环境来执行脚本
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'  # 设置Python版本
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # 安装依赖
+
+      - name: Run Python script
+        run: |
+          python GH-AC-main.py  # 执行脚本
+
+      - name: Commit and push changes
+        uses: EndBug/add-and-commit@v7  # 自动提交更改并推送
+        with:
+          author_name: 'GitHub Actions'
+          author_email: 'actions@github.com'
+          message: '自动更新生成的文件'
+          add: 'GAll(优选-*.txt'  # 提交更改的文件，确保这里填写生成的文件名
+          push: true
+
+      - name: Send success notification
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"GitHub Actions script executed successfully!"}' https://hooks.slack.com/services/xxx/yyy/zzz  # 你可以替换成任何你使用的推送通知服务
