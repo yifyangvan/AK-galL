@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main  # 当推送到主分支时触发工作流
-      - 'refs/heads/*'  # 如果你希望针对其他分支的提交也执行，可以取消注释此行
 
 jobs:
   run_script:
@@ -16,6 +15,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: List files in repository
+        run: ls -R  # 列出仓库文件，确认 GH-AC-main.py 是否存在
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -29,7 +31,7 @@ jobs:
 
       - name: Run Python script
         run: |
-          python GH-AC-main.py  # 执行脚本
+          python dist/GH-AC-main.py  # 执行脚本，路径为 dist/GH-AC-main.py
 
       - name: Commit and push changes
         uses: EndBug/add-and-commit@v7  # 自动提交更改并推送
@@ -37,9 +39,9 @@ jobs:
           author_name: 'GitHub Actions'
           author_email: 'actions@github.com'
           message: '自动更新生成的文件'
-          add: 'GAll(优选-*.txt'  # 提交更改的文件，确保这里填写生成的文件名
+          add: 'GAll(优选-*.txt'  # 提交更改的文件
           push: true
 
       - name: Send success notification
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"GitHub Actions script executed successfully!"}' https://hooks.slack.com/services/xxx/yyy/zzz  # 你可以替换成任何你使用的推送通知服务
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"GitHub Actions script executed successfully!"}' https://hooks.slack.com/services/xxx/yyy/zzz  # 替换成你使用的推送通知服务
