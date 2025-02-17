@@ -27,23 +27,8 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 运行你的 Python 脚本，生成 GAll(优选-tls).txt 文件
-    - name: Run Python script to generate GAll.txt files
-      run: |
-        python dist/GH-AC-main.py
-
-    # 等待生成的文件存在，确保文件生成在仓库根目录下
-    - name: Wait for generated files to appear in root directory
-      run: |
-        for file in "GAll(优选-tls).txt" "GAll(优选-非tls).txt" "GAll(优选-非优选).txt"; do
-          while [ ! -f "$file" ]; do
-            echo "等待生成 $file..."
-            sleep 5
-          done
-        done
-
-    # 运行 Python 脚本进行 IP 替换，确保替换操作在文件生成之后
-    - name: Run Python script to replace IPs
+    # 运行你的 Python 脚本
+    - name: Run Python script
       run: |
         python dist/GH-AC-main.py
 
