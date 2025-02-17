@@ -40,13 +40,13 @@ jobs:
       - name: Run Python script
         run: |
           cd dist  # 进入 dist 目录
-          python GH-AC-main.py  # 在 dist 目录中运行脚本，生成 .txt 文件
+          python GH-AC-main.py  # 在 dist 目录中运行脚本
 
       # 6️⃣ 提交并推送生成的 .txt 文件到仓库根目录
       - name: Commit generated results
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add "GAll(优选-tls).txt" "GAll(优选-非tls).txt" "GAll(优选-非优选).txt"  # 添加生成的文件，文件在根目录
+          git add "GAll(优选-tls).txt" "GAll(优选-非tls).txt" "GAll(优选-非优选).txt"  # 添加生成的文件
           git commit -m "更新 ${GITHUB_ENV[current_datetime]} - 自动更新节点"
           git push origin main  # 推送到 main 分支
