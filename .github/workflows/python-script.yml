@@ -28,7 +28,7 @@ jobs:
 
     - name: Run the obfuscated Python script
       run: |
-        python dist/your_obfuscated_script.py
+        python dist/GH-AC-main.py
 
     - name: Create push message
       id: push_message
