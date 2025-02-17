@@ -3,9 +3,9 @@ name: Run Python Script with PyArmor
 on:
   push:
     branches:
-      - main  # 推送到 main 分支时触发
+      - main
   schedule:
-    - cron: "0 17 * * *"  # 每天北京时间 1 点触发 (UTC 17 点)
+    - cron: "0 17 * * *"  # 每天北京时间 1 点 (UTC 17 点)
   workflow_dispatch:
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
         current_datetime=$(TZ="Asia/Shanghai" date "+%Y-%m-%d %H:%M")
         echo "current_datetime=$current_datetime" >> $GITHUB_ENV
 
-    # 3️⃣ 设置 Python 环境
+    # 3️⃣ 设置 Python
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -36,17 +36,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    # 5️⃣ 调整目录以兼容 PyArmor 读取上级目录
-    - name: Adjust working directory for PyArmor
+    # 5️⃣ 调整目录结构 (兼容 PyArmor 混淆路径)
+    - name: Adjust directory and run PyArmor script
       run: |
         mkdir ../workspace
         mv * ../workspace/
         cd ../workspace
         ls -al
-        python GH-AC-main.py
+        if [ -d "__pycache__" ]; then
+          echo "Detected PyArmor cache, running from __pycache__"
+          python __pycache__/GH-AC-main.py
+        else
+          echo "Running from source script"
+          python GH-AC-main.py
+        fi
 
-    # 6️⃣ 提交并推送生成的 .txt 文件到仓库根目录
-    - name: Commit generated results
+    # 6️⃣ 提交生成的 .txt 文件
+    - name: Commit and push results
       run: |
         cd ../workspace
         git config --global user.name 'github-actions'
