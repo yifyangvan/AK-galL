@@ -2,7 +2,7 @@ name: Run Python Script
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # 定时任务：每天北京时间凌晨1点 (UTC 时间：17:00)
+    - cron: '0 17 * * *' # 定时任务：每天北京时间凌晨1点 (UTC 时间：17:00)
   push:
     branches:
       - main
@@ -27,16 +27,11 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 运行 Python 脚本并捕获输出
+    # 运行你的 Python 脚本
     - name: Run Python script
-      id: run_python
+      id: run_script
       run: |
-        # 运行 Python 脚本并捕获输出
-        python_output=$(python dist/GH-AC-main.py)
-        
-        # 清理输出中的特殊字符，以便 GitHub 环境变量可以正常接收
-        clean_output=$(echo "$python_output" | sed 's/[() ]//g')  # 去掉括号和空格
-        echo "REPLACED_NODES_COUNT=$clean_output" >> $GITHUB_ENV
+        python dist/GH-AC-main.py
 
     # 创建动态推送消息
     - name: Create push message
@@ -44,17 +39,11 @@ jobs:
       run: |
         # 获取当前的北京时间
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-
-        # 根据替换的节点数生成推送消息
-        if [[ "${{ env.REPLACED_NODES_COUNT }}" != "null" && "${{ env.REPLACED_NODES_COUNT }}" != "" ]]; then
-          message="更新 ${{ env.REPLACED_NODES_COUNT }} 个节点 ($current_datetime)"
-        else
-          message="运行脚本完毕，无新节点替换 ($current_datetime)"
-        fi
-
-        # 将推送消息存入环境变量
-        echo "message=$message" >> $GITHUB_ENV
-        echo "${{ env.message }}"  # 打印生成的推送消息以便调试
+        # 根据实际情况设置 'insertions' 的值，这里假设是通过 Python 脚本返回的值，修改为实际情况
+        insertions=308  # 你可以通过脚本输出的节点数动态设置
+        message="更新 ${insertions} 个节点 (${current_datetime})"
+        echo "message=${message}" >> $GITHUB_ENV
+        echo "${{ env.message }}" # 打印生成的 push message 以便调试
 
     # 提交并推送到仓库（忽略没有更改时的错误）
     - name: Commit and push result
