@@ -1,52 +1,50 @@
-name: Run Python Script with PyArmor
+name: Run Python Script
 
 on:
+  schedule:
+    - cron: '0 17 * * *'  # 定时任务：每天北京时间凌晨1点 (UTC 时间：17:00)
   push:
     branches:
-      - main  # 推送到 main 分支时触发
-  schedule:
-    - cron: "0 17 * * *"  # 每天北京时间 1 点触发 (UTC 17 点)
+      - main
   workflow_dispatch:
 
 jobs:
-  build:
+  run_script:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ 检出仓库代码
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # 2️⃣ 获取北京时间
-      - name: Get current date and time in Beijing
-        id: get_datetime
-        run: |
-          current_datetime=$(TZ="Asia/Shanghai" date "+%Y-%m-%d %H:%M")
-          echo "current_datetime=$current_datetime" >> $GITHUB_ENV
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
 
-      # 3️⃣ 设置 Python 环境
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.11'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
 
-      # 4️⃣ 安装依赖
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+    - name: Run the obfuscated Python script
+      run: |
+        python dist/your_obfuscated_script.py
 
-      # 5️⃣ 运行 Python 脚本
-      - name: Run Python script
-        run: |
-          cd dist  # 进入 dist 目录
-          python GH-AC-main.py  # 在 dist 目录中运行脚本
+    - name: Create push message
+      id: push_message
+      run: |
+        # 获取当前的北京时间
+        current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
+        # 计算插入的节点数（假设你的脚本会输出插入的节点数）
+        insertions=10  # 这里你可以替换为脚本生成的实际值
+        echo "message=更新 ${insertions} 个节点 (${current_datetime})" >> $GITHUB_ENV
 
-      # 6️⃣ 提交并推送生成的 .txt 文件到仓库根目录
-      - name: Commit generated results
-        run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
-          git add "GAll(优选-tls).txt" "GAll(优选-非tls).txt" "GAll(优选-非优选).txt"  # 添加生成的文件
-          git commit -m "更新 ${GITHUB_ENV[current_datetime]} - 自动更新节点"
-          git push origin main  # 推送到 main 分支
+    - name: Commit and push result
+      run: |
+        git config --global user.name "Your Name"
+        git config --global user.email "youremail@example.com"
+        git add .
+        git commit -m "自动更新节点"
+        git push
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
