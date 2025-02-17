@@ -27,12 +27,18 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 运行你的 Python 脚本并捕获替换节点数
+    # 运行 Python 脚本并捕获输出
     - name: Run Python script
       id: run_python
       run: |
-        replaced_nodes=$(python dist/GH-AC-main.py)  # 运行 Python 脚本，并捕获输出
-        echo "REPLACED_NODES_COUNT=$replaced_nodes" >> $GITHUB_ENV  # 将替换的节点数传递给 GitHub 环境变量
+        # 运行 Python 脚本并捕获输出
+        replaced_nodes=$(python dist/GH-AC-main.py)
+        
+        # 捕获生成的节点数和替换的节点数
+        echo "REPLACED_NODES_COUNT=$replaced_nodes" >> $GITHUB_ENV
+        
+        # 假设你有不同的操作日志输出，我们可以在这里保存日志内容
+        echo "LOG_OUTPUT=$replaced_nodes" >> $GITHUB_ENV
 
     # 创建动态推送消息
     - name: Create push message
@@ -40,7 +46,16 @@ jobs:
       run: |
         # 获取当前的北京时间
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-        echo "message=更新 ${{ env.REPLACED_NODES_COUNT }} 个节点 (${{ env.current_datetime }})" >> $GITHUB_ENV
+
+        # 根据替换的节点数生成推送消息
+        if [[ "${{ env.REPLACED_NODES_COUNT }}" != "null" && "${{ env.REPLACED_NODES_COUNT }}" != "" ]]; then
+          message="更新 ${{ env.REPLACED_NODES_COUNT }} 个节点 ($current_datetime)"
+        else
+          message="运行脚本完毕，无新节点替换 ($current_datetime)"
+        fi
+
+        # 将推送消息存入环境变量
+        echo "message=$message" >> $GITHUB_ENV
         echo "${{ env.message }}"  # 打印生成的推送消息以便调试
 
     # 提交并推送到仓库（忽略没有更改时的错误）
