@@ -3,9 +3,9 @@ name: Run Python Script
 on:
   push:
     branches:
-      - main  # 触发条件为推送到 main 分支，可以根据需要修改为其他分支
+      - main  
   schedule:
-    - cron: "0 17 * * *"  # 每天北京时间凌晨 1 点触发（UTC 17 点）
+    - cron: "0 17 * * *"  
   workflow_dispatch:
 
 jobs:
@@ -19,22 +19,29 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.11'  # 使用 Python 3.x 版本
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt  # 安装依赖
+        pip install -r requirements.txt
+
+    - name: Get current date and time in Beijing
+      id: get_datetime
+      run: |
+        current_datetime=$(TZ="Asia/Shanghai" date "+%Y-%m-%d %H:%M")
+        echo "current_datetime=$current_datetime" >> $GITHUB_ENV
 
     - name: Run Python script
       run: |
-        cd dist  # 切换到 dist 目录
-        python GH-AC-main.py  # 执行加密后的脚本
+        cd dist
+        python GH-AC-main.py
+        mv GAll*.txt ../
 
     - name: Commit and push the results
-      uses: EndBug/add-and-commit@v7
+      uses: EndBug/add-and-commit@v9
       with:
         author_name: github-actions
         author_email: github-actions@github.com
-        message: "Automated update of generated .txt files"
-        add: "GAll(优选-*.txt"  # 添加生成的文件
+        message: "更新 $(git diff --numstat | awk '{s+=$1} END {print s}') 个节点 (${{ env.current_datetime }})"
+        add: "*.txt"
