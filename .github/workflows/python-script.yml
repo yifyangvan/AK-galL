@@ -29,8 +29,10 @@ jobs:
 
     # 运行你的 Python 脚本
     - name: Run Python script
+      id: run_python
       run: |
-        python dist/GH-AC-main.py
+        replaced_nodes=$(python dist/GH-AC-main.py)  # 运行 Python 脚本，并捕获输出
+        echo "REPLACED_NODES_COUNT=$replaced_nodes" >> $GITHUB_ENV  # 将替换的节点数传递给 GitHub 环境变量
 
     # 创建动态推送消息
     - name: Create push message
@@ -38,8 +40,8 @@ jobs:
       run: |
         # 获取当前的北京时间
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-        echo "message=运行 Python 脚本于 ${current_datetime}" >> $GITHUB_ENV
-        echo "${{ env.message }}" # 打印生成的 push message 以便调试
+        echo "message=更新 ${{ env.REPLACED_NODES_COUNT }} 个节点 (${{ env.current_datetime }})" >> $GITHUB_ENV
+        echo "${{ env.message }}"  # 打印生成的推送消息以便调试
 
     # 提交并推送到仓库（忽略没有更改时的错误）
     - name: Commit and push result
