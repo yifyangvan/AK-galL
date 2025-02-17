@@ -3,9 +3,9 @@ name: Run Python Script with PyArmor
 on:
   push:
     branches:
-      - main
+      - main  # 推送到 main 分支时触发
   schedule:
-    - cron: "0 17 * * *"  # 每天北京时间 1 点 (UTC 17 点)
+    - cron: "0 17 * * *"  # 每天北京时间 1 点触发 (UTC 17 点)
   workflow_dispatch:
 
 jobs:
@@ -13,50 +13,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1️⃣ 检出仓库代码
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      # 1️⃣ 检出仓库代码
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    # 2️⃣ 获取北京时间
-    - name: Get current date and time in Beijing
-      id: get_datetime
-      run: |
-        current_datetime=$(TZ="Asia/Shanghai" date "+%Y-%m-%d %H:%M")
-        echo "current_datetime=$current_datetime" >> $GITHUB_ENV
+      # 2️⃣ 获取北京时间
+      - name: Get current date and time in Beijing
+        id: get_datetime
+        run: |
+          current_datetime=$(TZ="Asia/Shanghai" date "+%Y-%m-%d %H:%M")
+          echo "current_datetime=$current_datetime" >> $GITHUB_ENV
 
-    # 3️⃣ 设置 Python
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.11'
+      # 3️⃣ 设置 Python 环境
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
 
-    # 4️⃣ 安装依赖
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      # 4️⃣ 安装依赖
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    # 5️⃣ 调整目录结构 (兼容 PyArmor 混淆路径)
-    - name: Adjust directory and run PyArmor script
-      run: |
-        mkdir ../workspace
-        mv * ../workspace/
-        cd ../workspace
-        ls -al
-        if [ -d "__pycache__" ]; then
-          echo "Detected PyArmor cache, running from __pycache__"
-          python __pycache__/GH-AC-main.py
-        else
-          echo "Running from source script"
-          python GH-AC-main.py
-        fi
+      # 5️⃣ 运行 Python 脚本
+      - name: Run Python script
+        run: |
+          python GH-AC-main.py  # 在 AK-galL 目录中运行脚本，生成 .txt 文件
 
-    # 6️⃣ 提交生成的 .txt 文件
-    - name: Commit and push results
-      run: |
-        cd ../workspace
-        git config --global user.name 'github-actions'
-        git config --global user.email 'github-actions@github.com'
-        git add "GAll(优选-tls).txt" "GAll(优选-非tls).txt"
-        git commit -m "更新 ${GITHUB_ENV[current_datetime]} - 自动更新节点"
-        git push
+      # 6️⃣ 提交并推送生成的 .txt 文件到仓库根目录
+      - name: Commit generated results
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add "GAll(优选-tls).txt" "GAll(优选-非tls).txt" # 添加生成的文件
+          git commit -m "更新 ${GITHUB_ENV[current_datetime]} - 自动更新节点"
+          git push origin main # 推送到 main 分支
