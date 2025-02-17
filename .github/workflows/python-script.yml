@@ -32,13 +32,11 @@ jobs:
       id: run_python
       run: |
         # 运行 Python 脚本并捕获输出
-        replaced_nodes=$(python dist/GH-AC-main.py)
+        python_output=$(python dist/GH-AC-main.py)
         
-        # 捕获生成的节点数和替换的节点数
-        echo "REPLACED_NODES_COUNT=$replaced_nodes" >> $GITHUB_ENV
-        
-        # 假设你有不同的操作日志输出，我们可以在这里保存日志内容
-        echo "LOG_OUTPUT=$replaced_nodes" >> $GITHUB_ENV
+        # 清理输出中的特殊字符，以便 GitHub 环境变量可以正常接收
+        clean_output=$(echo "$python_output" | sed 's/[() ]//g')  # 去掉括号和空格
+        echo "REPLACED_NODES_COUNT=$clean_output" >> $GITHUB_ENV
 
     # 创建动态推送消息
     - name: Create push message
