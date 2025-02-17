@@ -21,30 +21,33 @@ jobs:
       with:
         python-version: '3.11'
 
+    # 安装依赖库，从 requirements.txt 中自动读取
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install requests
+        pip install -r requirements.txt
 
-    - name: Run the obfuscated Python script
+    - name: Run Python script
       run: |
-        python dist/GH-AC-main.py
+        python scripts/update_nodes.py
 
     - name: Create push message
       id: push_message
       run: |
         # 获取当前的北京时间
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-        # 计算插入的节点数（假设你的脚本会输出插入的节点数）
-        insertions=10  # 这里你可以替换为脚本生成的实际值
+        # 假设 Python 脚本会生成文件 output/nodes_info.txt 标记新增的节点数
+        insertions=$(cat output/nodes_info.txt)
         echo "message=更新 ${insertions} 个节点 (${current_datetime})" >> $GITHUB_ENV
+        echo "${{ env.message }}"  # 打印生成的 push message 以便调试
 
     - name: Commit and push result
-      run: |
-        git config --global user.name "Your Name"
-        git config --global user.email "youremail@example.com"
-        git add .
-        git commit -m "自动更新节点"
-        git push
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+        git add .
+        git commit -m "${{ env.message }}"  # 使用动态生成的推送消息
+        git push
