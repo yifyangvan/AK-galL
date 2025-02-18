@@ -54,3 +54,12 @@ jobs:
 
     # 提交并推送到仓库（忽略没有更改时的错误）
     - name: Commit and push result
+      env:
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+        git add .
+        git commit -m "${{ env.message }}" || echo "Nothing to commit"
+        git push
