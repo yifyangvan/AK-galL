@@ -2,7 +2,7 @@ name: Run Python Script
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # 定时任务：每天北京时间凌晨1点 (UTC 时间：17:00)
+    - cron: '0 17 * * *'  # 每天定时任务（北京时间凌晨1点，UTC时间17:00）
   push:
     branches:
       - main
@@ -31,7 +31,7 @@ jobs:
       run: |
         output=$(python dist/GH-AC-main.py)
         echo "$output"  # 输出执行日志
-        echo "log_output=$output" >> $GITHUB_ENV  # 使用环境文件保存输出
+        echo "log_output=$output" >> $GITHUB_ENV  # 保存输出到环境变量
 
     - name: Create push message
       id: push_message
@@ -48,7 +48,6 @@ jobs:
         
         echo "message=$message" >> $GITHUB_ENV
 
-    # 提交并推送到仓库（忽略没有更改时的错误）
     - name: Commit and push result
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
