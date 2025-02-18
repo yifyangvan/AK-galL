@@ -27,7 +27,7 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 运行你的 Python 脚本并捕获输出
+    # 运行 Python 脚本并捕获输出
     - name: Run Python script and capture output
       id: run_script
       run: |
@@ -40,10 +40,17 @@ jobs:
       id: push_message
       run: |
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-        insertions=$(echo "${{ steps.run_script.outputs.log_output }}" | grep -o "节点" | wc -l)  # 获取节点数量
-        message="更新 ${insertions} 个节点 (${current_datetime})"
+        message=""
+        # 获取并构建消息
+        while read -r line; do
+          # 格式化节点更新信息
+          if [[ "$line" == *"生成完成"* ]]; then
+            message="${message}${line} (${current_datetime})\n"
+          fi
+        done <<< "${{ steps.run_script.outputs.log_output }}"
+        
         echo "message=$message" >> $GITHUB_ENV
-        echo "${{ env.message }}" # 打印生成的 push message 以便调试
+        echo "${{ env.message }}"  # 打印生成的 push message 以便调试
 
     # 提交并推送到仓库（忽略没有更改时的错误）
     - name: Commit and push result
