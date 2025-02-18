@@ -26,7 +26,6 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 运行 Python 脚本并捕获输出
     - name: Run Python script and capture output
       id: run_script
       run: |
@@ -34,7 +33,6 @@ jobs:
         echo "$output"  # 输出执行日志
         echo "log_output=$output" >> $GITHUB_ENV  # 使用环境文件保存输出
 
-    # 创建推送消息
     - name: Create push message
       id: push_message
       run: |
