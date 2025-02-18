@@ -33,20 +33,22 @@ jobs:
         echo "$output"  # 输出执行日志
         echo "log_output=$output" >> $GITHUB_ENV  # 保存输出到环境变量
 
-    - name: Create push message
-      id: push_message
+    - name: Format and push the result
+      id: format_push
       run: |
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
         message=""
+
         # 获取并构建消息
-        while read -r line; do
-          # 格式化节点更新信息
+        while IFS= read -r line; do
+          # 格式化节点更新信息，查找更新的行
           if [[ "$line" == *"更新"* ]]; then
             message="${message}${line} (${current_datetime})\n"
           fi
         done <<< "${{ env.log_output }}"
         
-        echo "message=$message" >> $GITHUB_ENV
+        # 如果消息非空，则将格式化后的消息保存到环境变量
+        echo "formatted_message=$message" >> $GITHUB_ENV
 
     - name: Commit and push result
       env:
@@ -55,6 +57,8 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+        
+        # 提交和推送
         git add .
-        git commit -m "${{ env.message }}" || echo "Nothing to commit"
+        git commit -m "${{ env.formatted_message }}" || echo "Nothing to commit"
         git push
