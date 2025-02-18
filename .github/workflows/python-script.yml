@@ -29,9 +29,18 @@ jobs:
     - name: Run Python script and capture output
       id: run_script
       run: |
+        # 捕获 python 脚本输出
         output=$(python dist/GH-AC-main.py)
-        echo "$output"  # 输出执行日志
-        echo "log_output=$output" >> $GITHUB_ENV  # 保存输出到环境变量
+        
+        # 输出日志以便调试
+        echo "$output"
+        
+        # 清理不需要的日志部分，仅保留生成文件更新信息
+        # 移除 Git diff 提交信息等，确保只输出 GAll 更新的信息
+        cleaned_output=$(echo "$output" | grep -E '更新.*节点')
+
+        # 将清理后的输出保存为环境变量
+        echo "log_output=$cleaned_output" >> $GITHUB_ENV
 
     - name: Format and push the result
       id: format_push
