@@ -35,7 +35,7 @@ jobs:
         # 输出日志以便调试
         echo "$output"
         
-        # 清理不需要的日志部分，仅保留生成文件更新信息
+        # 清理不需要的日志部分，仅保留 GAll 更新的信息
         # 移除 Git diff 提交信息等，确保只输出 GAll 更新的信息
         cleaned_output=$(echo "$output" | grep -E '更新.*节点')
 
@@ -52,10 +52,11 @@ jobs:
         while IFS= read -r line; do
           # 格式化节点更新信息，查找更新的行
           if [[ "$line" == *"更新"* ]]; then
-            message="${message}${line} (${current_datetime})\n"
+            # 使用 toJSON 格式，避免格式错误
+            message="${message}$(echo "$line" | jq -R .) (${current_datetime})\n"
           fi
         done <<< "${{ env.log_output }}"
-        
+
         # 如果消息非空，则将格式化后的消息保存到环境变量
         echo "formatted_message=$message" >> $GITHUB_ENV
 
