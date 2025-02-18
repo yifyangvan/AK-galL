@@ -21,7 +21,6 @@ jobs:
       with:
         python-version: '3.11'
 
-    # 安装依赖库，从 requirements.txt 中自动读取（如果文件存在）
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -33,7 +32,7 @@ jobs:
       run: |
         output=$(python dist/GH-AC-main.py)
         echo "$output"  # 输出执行日志
-        echo "::set-output name=log_output::$output"  # 保存输出作为步骤输出
+        echo "log_output=$output" >> $GITHUB_ENV  # 使用环境文件保存输出
 
     # 创建推送消息
     - name: Create push message
@@ -47,10 +46,9 @@ jobs:
           if [[ "$line" == *"更新"* ]]; then
             message="${message}${line} (${current_datetime})\n"
           fi
-        done <<< "${{ steps.run_script.outputs.log_output }}"
+        done <<< "${{ env.log_output }}"
         
         echo "message=$message" >> $GITHUB_ENV
-        echo "${{ env.message }}"  # 打印生成的 push message 以便调试
 
     # 提交并推送到仓库（忽略没有更改时的错误）
     - name: Commit and push result
