@@ -2,18 +2,18 @@ name: Run Python Script
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # 每天定时运行（北京时间凌晨1点）
+    - cron: '0 17 * * *'  # 每天定时运行（北京时间 1:00）
   push:
     branches:
       - main
     paths:
       - 'dist/GH-AC-main.py'  # 仅当 Python 脚本更新时运行
-      - '.github/workflows/python-script.yml'  # 当 yml 修改时自动运行
-  workflow_dispatch:  # 允许手动触发
+      - '.github/workflows/python-script.yml'  # 修改 yml 时触发
+  workflow_dispatch:  # 允许手动运行
 
 jobs:
   run_script:
-    if: "!contains(github.event.head_commit.message, '更新了')"  # 避免循环提交
+    if: "!contains(github.event.head_commit.message, '更新了')"  # 避免无限循环提交
     runs-on: ubuntu-latest
 
     steps:
@@ -37,42 +37,33 @@ jobs:
         python dist/GH-AC-main.py
         echo "程序执行完毕。"
 
-    - name: Prepare commit messages
-      id: prepare_commit
-      run: |
-        current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-        messages=""
-
-        # 遍历所有 txt 文件（排除 GAll.txt）
-        for file in GAll.*.txt 替换_GAll.*.txt; do
-          [[ "$file" == "GAll.txt" ]] && continue  # 跳过 GAll.txt
-
-          if [[ -f "$file" ]]; then
-            line_count=$(wc -l < "$file")
-            message="$file 更新了 $line_count 个节点 ($current_datetime)"
-            messages+="$message\n"
-            echo "$message" > commit_message_$file.txt
-          fi
-        done
-
-        echo -e "$messages" > commit_messages.txt
-        echo "commit_messages_path=commit_messages.txt" >> $GITHUB_ENV
-
-    - name: Commit and push changes
+    - name: Calculate line counts and commit separately
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-        
-        # 避免提交 GAll.txt
-        git add . -- ':!GAll.txt'
 
-        # 遍历 commit_messages.txt，单独提交每个 txt
-        while IFS= read -r message; do
-          file=$(echo "$message" | awk '{print $1}')
-          [[ -f "$file" ]] || continue  # 确保文件存在
-          git commit -m "$message" || echo "Nothing to commit"
-          git push || echo "Push failed, retrying..."
-        done < "${{ env.commit_messages_path }}"
+        current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
+
+        # 指定要处理的 5 个固定 TXT 文件
+        files=(
+          "GAll.(优选-tls).txt"
+          "GAll.(优选-非tls).txt"
+          "GAll.(非优选).txt"
+          "替换_GAll(优选-tls).txt"
+          "替换_GAll(优选-非tls).txt"
+        )
+
+        # 遍历文件，生成单独的 commit
+        for file in "${files[@]}"; do
+          if [[ -f "$file" ]]; then
+            line_count=$(wc -l < "$file" | awk '{print $1}')  # 计算当前 TXT 行数
+            commit_message="$file 更新了 $line_count 个节点 ($current_datetime)"
+            
+            git add "$file"
+            git commit -m "$commit_message" || echo "Nothing to commit for $file"
+            git push || echo "Push failed, retrying..."
+          fi
+        done
