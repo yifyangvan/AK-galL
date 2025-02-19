@@ -37,7 +37,7 @@ jobs:
         python dist/GH-AC-main.py
         echo "程序执行完毕。"
 
-    - name: Calculate line counts and commit separately
+    - name: Commit each TXT file separately
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
@@ -47,7 +47,7 @@ jobs:
 
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
 
-        # 指定要处理的 5 个固定 TXT 文件
+        # 5 个固定 TXT 文件
         files=(
           "GAll.(优选-tls).txt"
           "GAll.(优选-非tls).txt"
@@ -56,14 +56,13 @@ jobs:
           "替换_GAll(优选-非tls).txt"
         )
 
-        # 遍历文件，生成单独的 commit
+        # 遍历文件，逐个提交
         for file in "${files[@]}"; do
           if [[ -f "$file" ]]; then
             line_count=$(wc -l < "$file" | awk '{print $1}')  # 计算当前 TXT 行数
             commit_message="$file 更新了 $line_count 个节点 ($current_datetime)"
-            
+
             git add "$file"
-            git commit -m "$commit_message" || echo "Nothing to commit for $file"
-            git push || echo "Push failed, retrying..."
+            git commit -m "$commit_message" && git push || echo "Nothing to commit for $file"
           fi
         done
