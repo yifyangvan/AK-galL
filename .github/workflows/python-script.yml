@@ -37,11 +37,6 @@ jobs:
           python dist/GH-AC-main.py
           echo "程序执行完毕。"
 
-      - name: Check generated files
-        run: |
-          echo "检查生成的 TXT 文件："
-          ls -lah GAll.*.txt 替换_GAll*.txt || echo "⚠️ 部分 TXT 文件缺失！"
-
       - name: Commit each TXT file separately
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -52,7 +47,6 @@ jobs:
 
           current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
 
-          # 5 个固定 TXT 文件
           files=(
             "GAll.(优选-tls).txt"
             "GAll.(优选-非tls).txt"
@@ -61,22 +55,11 @@ jobs:
             "替换_GAll(优选-非tls).txt"
           )
 
-          # 逐个检查文件是否变更，并独立提交
           for file in "${files[@]}"; do
             if [[ -f "$file" ]]; then
-              line_count=$(wc -l < "$file" | awk '{print $1}')  # 计算当前 TXT 行数
+              line_count=$(wc -l < "$file")
               commit_message="$file 更新了 $line_count 个节点 ($current_datetime)"
-
-              # 确保文件有变更再提交
-              if ! git diff --quiet "$file"; then
-                git add "$file"
-                git commit -m "$commit_message"
-                git push
-                echo "✅ 已提交：$commit_message"
-              else
-                echo "⚠️ $file 无变化，跳过提交。"
-              fi
-            else
-              echo "❌ $file 不存在，跳过。"
+              git add "$file"
+              git commit -m "$commit_message" && git push || echo "$file 无变化，跳过提交。"
             fi
           done
