@@ -2,16 +2,17 @@ name: Run Python Script
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # 每天定时任务（北京时间 1:00 运行）
+    - cron: '0 17 * * *'  # 每天 UTC 时间 17:00 运行（北京时间 01:00）
   push:
     branches:
-      - main
+      - main  # 监听 main 分支的代码提交
     paths:
-      - 'python-script.yml'  # 仅当 yml 被修改时触发
-  workflow_dispatch:  # 手动触发
+      - ".github/workflows/python-script.yml"  # 仅监听 yml 变更
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   run_script:
+    if: github.event_name != 'push' || github.event.head_commit.modified[0] == '.github/workflows/python-script.yml'
     runs-on: ubuntu-latest
 
     steps:
@@ -28,42 +29,39 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Run Python script
+    - name: Run Python script and capture output
+      id: run_script
       run: |
-        python dist/GH-AC-main.py
+        output=$(python dist/GH-AC-main.py)
+        echo "$output"
+        cleaned_output=$(echo "$output" | grep -E '更新.*节点')
+        echo "log_output=$cleaned_output" >> $GITHUB_ENV
 
-    - name: Fix potential encoding issues
+    - name: Format and push the result
+      id: format_push
       run: |
-        # 确保所有 TXT 文件都是 UTF-8 编码
-        find . -type f -name "*.txt" -exec iconv -f UTF-8 -t UTF-8 {} -o {} \;
+        current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
+        message=""
 
-    - name: Configure Git
+        while IFS= read -r line; do
+          if [[ "$line" == *"更新"* ]]; then
+            message="${message}${line} (${current_datetime})\n"
+          fi
+        done <<< "${{ env.log_output }}"
+
+        echo "formatted_message=$message" >> $GITHUB_ENV
+
+    - name: Commit and push result
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-
-    - name: Ignore unnecessary files
-      run: |
-        echo "dist/pyarmor_runtime_000000/__pycache__/" >> .gitignore
-        git rm -r --cached dist/pyarmor_runtime_000000/__pycache__ || true
-
-    - name: Commit and push each txt file separately
-      run: |
-        for file in *.txt; do
-          if [ -f "$file" ]; then
-            count=$(wc -l < "$file")
-            current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-            
-            git add "$file"
-            if git diff --cached --quiet; then
-              echo "No changes in $file, skipping commit."
-              continue
-            fi
-
-            git commit -m "$file 更新了 $count 个节点 ($current_datetime)"
-            git push
-          fi
+        
+        git add . -- ':!GAll.txt'  # 避免 GAll.txt 被提交
+        
+        for file in $(git diff --name-only --cached); do
+          git commit -m "$file 更新了 $(grep -oP '\d+(?= 个节点)' <<< "${{ env.log_output }}") 个节点 ($(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S'))" || echo "Nothing to commit"
+          git push || echo "Push failed, retrying..."
         done
