@@ -29,18 +29,19 @@ jobs:
     - name: Run Python script and capture output
       id: run_script
       run: |
-        # 捕获 python 脚本输出
+        # 运行 Python 脚本并捕获输出
         output=$(python dist/GH-AC-main.py)
         
         # 输出日志以便调试
         echo "$output"
         
-        # 清理不需要的日志部分，仅保留 GAll 更新的信息
-        # 移除 Git diff 提交信息等，确保只输出 GAll 更新的信息
-        cleaned_output=$(echo "$output" | grep -E '更新.*节点')
+        # 过滤符合格式的 "更新（行数）个节点（北京时间）" 记录
+        cleaned_output=$(echo "$output" | grep -E '更新 [0-9]+ 个节点')
 
-        # 将清理后的输出保存为环境变量
-        echo "log_output=$cleaned_output" >> $GITHUB_ENV
+        # 将过滤后的日志存入环境变量
+        echo "log_output<<EOF" >> $GITHUB_ENV
+        echo "$cleaned_output" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Format and push the result
       id: format_push
@@ -48,16 +49,20 @@ jobs:
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
         message=""
 
-        # 获取并构建消息
+        # 读取环境变量内容
         while IFS= read -r line; do
-          # 格式化节点更新信息，查找更新的行
+          # 仅保留 "更新（行数）个节点（北京时间）" 格式的信息
           if [[ "$line" == *"更新"* ]]; then
-            # 使用 toJSON 格式，避免格式错误
-            message="${message}$(echo "$line" | jq -R .) (${current_datetime})\n"
+            message="${message}${line} (${current_datetime})\n"
           fi
         done <<< "${{ env.log_output }}"
 
-        # 如果消息非空，则将格式化后的消息保存到环境变量
+        # 如果 message 为空，则设置默认信息
+        if [[ -z "$message" ]]; then
+          message="自动更新 GAll 文件 (${current_datetime})"
+        fi
+
+        # 设置环境变量，供后续步骤使用
         echo "formatted_message=$message" >> $GITHUB_ENV
 
     - name: Commit and push result
@@ -70,5 +75,5 @@ jobs:
         
         # 提交和推送
         git add .
-        git commit -m "${{ env.formatted_message }}" || echo "Nothing to commit"
-        git push
+        git diff --cached --quiet || git commit -m "${{ env.formatted_message }}"
+        git push || echo "Nothing to push"
