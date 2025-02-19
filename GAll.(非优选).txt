@@ -78,6 +78,7 @@ vless://08ffb75d-2dbf-47e6-ae91-462ad86be43a@jackfpr.fatickweb.ir:9582?security=
 vless://0f6b6ee1-2a0c-4d51-88c0-0f5fce7dba11@hofates.ticksoft.ir:2096?security=reality&type=grpc&headerType=&serviceName=2096vless&authority=&mode=gun&sni=wWw.yottasrc.com&fp=random&pbk=Ie8Kv1YWIMvOr_lhGtkUWEiLDi7KfKZtAd9rvOVxTRs&sid=adbca2dcb4fac34f#server_884
 vless://34685220-2eef-4595-826e-0788a8edb8fa@jsogras.webeleven.ir:3114?security=reality&type=tcp&headerType=&path=&host=&sni=secure.sunucun.com.tr&fp=random&pbk=HmhJeIza6ZLRu38PWEI00aKv-Nqp4SglYXvDZj9rbhM&sid=c03adf0e43c6bb75#server_885
 vless://9208f492-dc63-4111-ad37-20da32bf26a1@giahfas.ticksoft.ir:3114?security=reality&type=tcp&headerType=&path=&host=&sni=www.sunucun.com.tr&fp=randomized&pbk=HmhJeIza6ZLRu38PWEI00aKv-Nqp4SglYXvDZj9rbhM&sid=c03adf0e43c6bb75#server_886
+vless://8cfdbf9a-525f-4856-86a5-bb5cd7adeb75@hgslismns.ticksoft.ir:3114?security=reality&type=tcp&headerType=&path=&host=&sni=www.sunucun.com.tr&fp=random&pbk=HmhJeIza6ZLRu38PWEI00aKv-Nqp4SglYXvDZj9rbhM&sid=c03adf0e43c6bb75#server_887
 vless://9e003436-1354-4510-8dd6-5834dc1e7829@65.20.97.111:443?security=&type=xhttp&host=&path=&sni=&alpn=&fp=&encryption=none#server_975
 vless://9e003436-1354-4510-8dd6-5834dc1e7829@208.85.21.227:443?security=&type=xhttp&host=&path=&sni=&alpn=&fp=&encryption=none#server_976
 vless://9e003436-1354-4510-8dd6-5834dc1e7829@65.20.100.7:443?security=&type=xhttp&host=&path=&sni=&alpn=&fp=&encryption=none#server_977
