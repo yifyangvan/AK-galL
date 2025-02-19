@@ -35,21 +35,25 @@ jobs:
         output=$(python dist/GH-AC-main.py)
         echo "$output"
         cleaned_output=$(echo "$output" | grep -E '更新.*节点')
-        echo "log_output=$cleaned_output" >> $GITHUB_ENV
+        echo "log_output<<EOF" >> $GITHUB_ENV
+        echo "$cleaned_output" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Format and push the result
       id: format_push
       run: |
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-        message=""
-
-        while IFS= read -r line; do
-          if [[ "$line" == *"更新"* ]]; then
-            message="${message}${line} (${current_datetime})\n"
-          fi
-        done <<< "${{ env.log_output }}"
-
-        echo "formatted_message=$message" >> $GITHUB_ENV
+        
+        # 使用 echo EOF 避免 GitHub Actions 解析错误
+        {
+          echo "formatted_message<<EOF"
+          while IFS= read -r line; do
+            if [[ "$line" == *"更新"* ]]; then
+              echo "$line (${current_datetime})"
+            fi
+          done <<< "${{ env.log_output }}"
+          echo "EOF"
+        } >> $GITHUB_ENV
 
     - name: Commit and push result
       env:
@@ -61,7 +65,11 @@ jobs:
         
         git add . -- ':!GAll.txt'  # 避免 GAll.txt 被提交
         
-        for file in $(git diff --name-only --cached); do
-          git commit -m "$file 更新了 $(grep -oP '\d+(?= 个节点)' <<< "${{ env.log_output }}") 个节点 ($(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S'))" || echo "Nothing to commit"
-          git push || echo "Push failed, retrying..."
-        done
+        while IFS= read -r line; do
+          file=$(echo "$line" | awk '{print $1}')  # 获取文件名
+          node_count=$(echo "$line" | grep -oP '\d+(?= 个节点)')  # 提取节点数
+          if [[ -n "$file" && -n "$node_count" ]]; then
+            git commit -m "$file 更新了 $node_count 个节点 (${current_datetime})" || echo "Nothing to commit"
+            git push || echo "Push failed, retrying..."
+          fi
+        done <<< "${{ env.formatted_message }}"
