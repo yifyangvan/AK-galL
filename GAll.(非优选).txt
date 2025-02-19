@@ -1,5 +1,4 @@
 vless://f5b5b75a-a1e2-4e6f-8dce-14dd99c80f39@hajlab.ucdavis.edu:80?path=%2F&security=none&encryption=none&host=wWw.SpEeDtEsT.NeT.ZuLa.Ir.IkCoSaLeS.iR.D662599.v16.drlimit.net&type=ws#server_249
-vless://9fdc6f83-bfbd-40dd-8e4e-1678ee20351c@inthenameofgodfragment.ignorelist.com:443?security=auto&type=ws&host=fari.ati-app.com&path=%2Fwss&sni=fari.ati-app.com&alpn=h3,h2,http/1.1&fp=chrome&encryption=none#server_253
 vless://f5b5b75a-a1e2-4e6f-8dce-14dd99c80f39@hajlab.ucdavis.edu:80?path=%2F&security=none&encryption=none&host=wWw.SpEeDtEsT.NeT.ZuLa.Ir.IkCoSaLeS.iR.D662599.v12.drlimit.net&type=ws#server_254
 vless://f5b5b75a-a1e2-4e6f-8dce-14dd99c80f39@hajlab.ucdavis.edu:80?path=%2F&security=none&encryption=none&host=wWw.SpEeDtEsT.NeT.ZuLa.aIr.IkCoSaLeS.iR.D662599.v03.feadlenetwork19922h.net&type=ws#server_256
 vless://f5b5b75a-a1e2-4e6f-8dce-14dd99c80f39@hajlab.ucdavis.edu:80?path=%2F&security=none&encryption=none&host=wWw.SpEeDtEsT.NeT.ZuLa.Ir.IkCoSaLeS.iR.D662599.v04.drlimit.net&type=ws#server_257
