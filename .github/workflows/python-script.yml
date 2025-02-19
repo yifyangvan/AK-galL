@@ -2,17 +2,16 @@ name: Run Python Script
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # 每天 UTC 时间 17:00 运行（北京时间 01:00）
+    - cron: '0 17 * * *'  # 每天 UTC 17:00（北京时间 01:00）
   push:
     branches:
-      - main  # 监听 main 分支的代码提交
+      - main
     paths:
-      - ".github/workflows/python-script.yml"  # 仅监听 yml 变更
+      - ".github/workflows/python-script.yml"  # 只监听 yml 变更
   workflow_dispatch:  # 允许手动触发
 
 jobs:
   run_script:
-    if: github.event_name != 'push' || github.event.head_commit.modified[0] == '.github/workflows/python-script.yml'
     runs-on: ubuntu-latest
 
     steps:
@@ -43,8 +42,6 @@ jobs:
       id: format_push
       run: |
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-        
-        # 使用 echo EOF 避免 GitHub Actions 解析错误
         {
           echo "formatted_message<<EOF"
           while IFS= read -r line; do
@@ -62,11 +59,11 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-        
-        git add . -- ':!GAll.txt'  # 避免 GAll.txt 被提交
-        
+
+        git add . -- ':!GAll.txt'  # 避免提交 GAll.txt
+
         while IFS= read -r line; do
-          file=$(echo "$line" | awk '{print $1}')  # 获取文件名
+          file=$(echo "$line" | awk '{print $1}')  # 提取文件名
           node_count=$(echo "$line" | grep -oP '\d+(?= 个节点)')  # 提取节点数
           if [[ -n "$file" && -n "$node_count" ]]; then
             git commit -m "$file 更新了 $node_count 个节点 (${current_datetime})" || echo "Nothing to commit"
