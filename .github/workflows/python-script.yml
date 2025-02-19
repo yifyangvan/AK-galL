@@ -1,12 +1,14 @@
 name: Run Python Script
 
 on:
+  schedule:
+    - cron: '0 17 * * *'  # 每天定时任务（北京时间 1:00 运行）
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/python-script.yml'  # 仅监听这个 yml 文件的变更
-  workflow_dispatch:  # 允许手动触发
+      - 'python-script.yml'  # 仅当 yml 被修改时触发
+  workflow_dispatch:  # 手动触发
 
 jobs:
   run_script:
@@ -26,51 +28,25 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Run Python script and capture output
-      id: run_script
+    - name: Run Python script
       run: |
-        echo "开始运行 Python 脚本..."
-        output=$(python dist/GH-AC-main.py)
-        
-        # 输出完整日志，方便调试
-        echo "$output"
+        python dist/GH-AC-main.py
 
-        # 仅保留包含 "更新了" 关键词的行
-        cleaned_output=$(echo "$output" | grep -E '更新了.*节点' || echo "")
-
-        # 将清理后的输出保存到环境变量
-        echo "log_output<<EOF" >> $GITHUB_ENV
-        echo "$cleaned_output" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
-
-    - name: Format and push the result
-      id: format_push
-      run: |
-        current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-        message=""
-
-        # 读取并格式化 log_output
-        while IFS= read -r line; do
-          if [[ "$line" == *"更新了"* ]]; then
-            message="${message}${line} (${current_datetime})\n"
-          fi
-        done <<< "${{ env.log_output }}"
-
-        # 如果消息非空，则保存到环境变量
-        if [[ -n "$message" ]]; then
-          echo "formatted_message<<EOF" >> $GITHUB_ENV
-          echo -e "$message" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-        fi
-
-    - name: Commit and push result
+    - name: Commit and push each txt separately
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
-        
-        git add .
-        git commit -m "${{ env.formatted_message }}" || echo "Nothing to commit"
-        git push || echo "Git push failed, but continuing..."
+
+        for file in GAll.*.txt 替换_GAll.*.txt; do
+          if [ -f "$file" ]; then
+            count=$(wc -l < "$file")
+            current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
+            git add "$file"
+            git commit -m "$file 更新了 $count 个节点 ($current_datetime)"
+          fi
+        done
+
+        git push || echo "Nothing to push"
