@@ -2,16 +2,18 @@ name: Run Python Script
 
 on:
   schedule:
-    - cron: '0 17 * * *'  # 每天 UTC 17:00（北京时间 01:00）
+    - cron: '0 17 * * *'  # 每天定时运行（北京时间凌晨1点）
   push:
     branches:
       - main
     paths:
-      - ".github/workflows/python-script.yml"  # 只监听 yml 变更
+      - 'dist/GH-AC-main.py'  # 仅当 Python 脚本更新时运行
+      - '.github/workflows/python-script.yml'  # 当 yml 修改时自动运行
   workflow_dispatch:  # 允许手动触发
 
 jobs:
   run_script:
+    if: "!contains(github.event.head_commit.message, '更新了')"  # 避免循环提交
     runs-on: ubuntu-latest
 
     steps:
@@ -28,45 +30,49 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Run Python script and capture output
+    - name: Run Python script
       id: run_script
       run: |
-        output=$(python dist/GH-AC-main.py)
-        echo "$output"
-        cleaned_output=$(echo "$output" | grep -E '更新.*节点')
-        echo "log_output<<EOF" >> $GITHUB_ENV
-        echo "$cleaned_output" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
+        echo "程序开始运行..."
+        python dist/GH-AC-main.py
+        echo "程序执行完毕。"
 
-    - name: Format and push the result
-      id: format_push
+    - name: Prepare commit messages
+      id: prepare_commit
       run: |
         current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-        {
-          echo "formatted_message<<EOF"
-          while IFS= read -r line; do
-            if [[ "$line" == *"更新"* ]]; then
-              echo "$line (${current_datetime})"
-            fi
-          done <<< "${{ env.log_output }}"
-          echo "EOF"
-        } >> $GITHUB_ENV
+        messages=""
 
-    - name: Commit and push result
+        # 遍历所有 txt 文件（排除 GAll.txt）
+        for file in GAll.*.txt 替换_GAll.*.txt; do
+          [[ "$file" == "GAll.txt" ]] && continue  # 跳过 GAll.txt
+
+          if [[ -f "$file" ]]; then
+            line_count=$(wc -l < "$file")
+            message="$file 更新了 $line_count 个节点 ($current_datetime)"
+            messages+="$message\n"
+            echo "$message" > commit_message_$file.txt
+          fi
+        done
+
+        echo -e "$messages" > commit_messages.txt
+        echo "commit_messages_path=commit_messages.txt" >> $GITHUB_ENV
+
+    - name: Commit and push changes
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+        
+        # 避免提交 GAll.txt
+        git add . -- ':!GAll.txt'
 
-        git add . -- ':!GAll.txt'  # 避免提交 GAll.txt
-
-        while IFS= read -r line; do
-          file=$(echo "$line" | awk '{print $1}')  # 提取文件名
-          node_count=$(echo "$line" | grep -oP '\d+(?= 个节点)')  # 提取节点数
-          if [[ -n "$file" && -n "$node_count" ]]; then
-            git commit -m "$file 更新了 $node_count 个节点 (${current_datetime})" || echo "Nothing to commit"
-            git push || echo "Push failed, retrying..."
-          fi
-        done <<< "${{ env.formatted_message }}"
+        # 遍历 commit_messages.txt，单独提交每个 txt
+        while IFS= read -r message; do
+          file=$(echo "$message" | awk '{print $1}')
+          [[ -f "$file" ]] || continue  # 确保文件存在
+          git commit -m "$message" || echo "Nothing to commit"
+          git push || echo "Push failed, retrying..."
+        done < "${{ env.commit_messages_path }}"
