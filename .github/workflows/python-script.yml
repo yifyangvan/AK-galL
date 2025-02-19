@@ -32,7 +32,12 @@ jobs:
       run: |
         python dist/GH-AC-main.py
 
-    - name: Commit and push each txt separately
+    - name: Fix potential encoding issues
+      run: |
+        # 确保所有 TXT 文件都是 UTF-8 编码
+        find . -type f -name "*.txt" -exec iconv -f UTF-8 -t UTF-8 {} -o {} \;
+
+    - name: Check for changes before committing
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
@@ -40,11 +45,20 @@ jobs:
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
 
-        for file in GAll.*.txt 替换_GAll.*.txt; do
+        # 只添加 .txt 文件，忽略缓存文件
+        git add *.txt
+
+        # 检查是否有变更
+        if git diff --cached --quiet; then
+          echo "No changes detected, skipping commit."
+          exit 0
+        fi
+
+        # 提交每个文件
+        for file in *.txt; do
           if [ -f "$file" ]; then
             count=$(wc -l < "$file")
             current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-            git add "$file"
             git commit -m "$file 更新了 $count 个节点 ($current_datetime)"
           fi
         done
