@@ -22,11 +22,11 @@ jobs:
         run: |
           node GALL.mjs
 
-      - name: Get number of insertions in git log
-        id: get_insertions
+      - name: Get number of lines in GAll.txt
+        id: get_lines
         run: |
-          insertions=$(git log --oneline --stat | grep 'insertions' | awk '{sum += $4} END {print sum}')
-          echo "insertions=$insertions" >> $GITHUB_ENV
+          lines=$(wc -l < GAll.txt)
+          echo "lines=$lines" >> $GITHUB_ENV
 
       - name: Get current date and time in Beijing
         id: get_datetime
@@ -43,7 +43,7 @@ jobs:
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
           
           # 创建推送消息
-          message="更新 ${insertions} 个节点 (${{ env.current_datetime }})"
+          message="更新 ${lines} 个节点 (${{ env.current_datetime }})"
           
           # 添加修改、提交并推送
           git add GAll.txt
