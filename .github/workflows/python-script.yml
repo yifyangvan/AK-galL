@@ -1,4 +1,4 @@
-name: Auto Node Updater
+name: Auto Node Update
 on:
   schedule:
     - cron: '0 17 * * *'  # UTC时间17点(北京时间1点)
@@ -11,24 +11,27 @@ on:
   workflow_dispatch:
 
 jobs:
-  execute-script:
+  update:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '更新了')"
     
     steps:
-    - name: Checkout Code
+    - name: Checkout
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
     - name: Verify Files
       run: |
+        echo "仓库文件列表:"
+        ls -l
+        echo "检查必要文件:"
         if [ ! -f GAll.txt ]; then
-          echo "::error::缺少 GAll.txt 文件"
+          echo "::error::缺少 GAll.txt"
           exit 1
         fi
         if [ ! -f AddIP.txt ]; then
-          echo "::error::缺少 AddIP.txt 文件"
+          echo "::error::缺少 AddIP.txt"
           exit 1
         fi
 
@@ -48,24 +51,31 @@ jobs:
         python dist/GH-AC-main.py
         echo "STATS_JSON=$(cat node_stats.json)" >> $GITHUB_ENV
 
-    - name: Commit Results
+    - name: Commit Changes
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # 配置Git
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}
-
+        
         # 读取统计信息
         echo "$STATS_JSON" > node_stats.json
         timestamp=$(jq -r '.timestamp' node_stats.json)
-
-        # 处理每个文件
-        jq -r '.stats | to_entries[] | "\(.key) \(.value)"' node_stats.json | while read filename line_count; do
+        
+        # 提交每个文件
+        jq -r '.stats | keys_unsorted[]' node_stats.json | while read filename; do
+          line_count=$(jq -r ".stats.\"$filename\"" node_stats.json)
+          
+          # 强制添加文件
           git add "$filename"
-          git commit -m "更新${filename}（${line_count}节点 @${timestamp}）" --allow-empty
+          
+          # 生成提交信息
+          commit_msg="更新了${line_count}节点 - ${filename} (${timestamp})"
+          
+          # 允许空提交
+          git commit -m "$commit_msg" --allow-empty
         done
-
+        
         # 推送所有提交
         git push origin main
