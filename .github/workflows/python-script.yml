@@ -7,18 +7,20 @@ on:
     branches:
       - main
     paths:
-      - 'dist/GH-AC-main.py'  # 仅当 Python 脚本更新时运行
-      - '.github/workflows/python-script.yml'  # 修改 yml 时触发
-  workflow_dispatch:  # 允许手动运行
+      - 'dist/GH-AC-main.py'
+      - '.github/workflows/python-script.yml'
+  workflow_dispatch:
 
 jobs:
   run_script:
-    if: "!contains(github.event.head_commit.message, '更新了')"  # 避免无限循环提交
+    if: "!contains(github.event.head_commit.message, '更新了')"
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 获取完整提交历史
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
@@ -31,55 +33,58 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run Python script
-        id: run_script
         run: |
           echo "程序开始运行..."
-          python dist/GH-AC-main.py  # 运行混淆后的 Python 脚本
+          python dist/GH-AC-main.py
           echo "程序执行完毕。"
 
-      - name: Commit and push TXT files
+      - name: Commit each TXT individually
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
 
           current_datetime=$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')
-          committed=false
+          need_push=false
 
-          # 需要检查的 TXT 文件列表
-          txt_files=(
-            "GAll.(优选-tls).txt"
-            "GAll.(优选-非tls).txt"
-            "GAll.(非优选).txt"
-            "替换_GAll(优选-tls).txt"
-            "替换_GAll(优选-非tls).txt"
+          # 修复文件名中的点号匹配问题
+          declare -A file_map=(
+            ["GAll.(优选-tls).txt"]="优选-tls"
+            ["GAll.(优选-非tls).txt"]="优选-非tls"
+            ["GAll.(非优选).txt"]="非优选"
+            ["替换_GAll.(优选-tls).txt"]="替换优选-tls"
+            ["替换_GAll.(优选-非tls).txt"]="替换优选-非tls"
           )
 
-          # 逐个检查并提交每个文件
-          for txt_file in "${txt_files[@]}"; do
-            if [ -f "$txt_file" ]; then
-              line_count=$(wc -l < "$txt_file")
-              message="更新了 ${line_count} 个节点 (${current_datetime})"
-              
-              git add "$txt_file"
-              if git commit -m "$message"; then
-                committed=true
-                echo "已提交 $txt_file 的变更"
+          for file in "${!file_map[@]}"; do
+            if [[ -f "$file" ]]; then
+              # 获取文件旧版本内容
+              old_hash=$(git rev-parse HEAD:"$file" 2>/dev/null || echo "null")
+              new_hash=$(git hash-object "$file")
+
+              # 仅当文件有变更时提交
+              if [[ "$old_hash" != "$new_hash" ]]; then
+                line_count=$(wc -l < "$file")
+                message="更新了 ${file_map[$file]} ${line_count}节点 ($current_datetime)"
+                
+                git add "$file"
+                git commit -m "$message"
+                need_push=true
+                echo "✅ 已提交 $file 变更"
               else
-                echo "$txt_file 无内容变更"
+                echo "🟡 $file 无内容变化"
               fi
             else
-              echo "$txt_file 文件未生成"
+              echo "🔴 $file 文件未生成"
             fi
           done
 
-          # 如果有提交才推送
-          if $committed; then
-            git pull --rebase origin main  # 防止推送冲突
+          if $need_push; then
+            git pull --rebase origin main
             git push origin main
-            echo "变更已推送"
+            echo "🚀 已推送所有变更"
           else
-            echo "没有需要提交的变更"
+            echo "🟢 没有需要推送的变更"
           fi
