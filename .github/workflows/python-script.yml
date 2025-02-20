@@ -2,7 +2,6 @@ name: Auto Node Update
 on:
   schedule:
     - cron: '0 17 * * *'  # UTC时间17点(北京时间1点)
-      timezone: Asia/Shanghai
   push:
     branches: [main]
     paths:
@@ -52,9 +51,10 @@ jobs:
         cat node_stats.json  # 输出 node_stats.json 文件的内容，便于调试
         echo "STATS_JSON=$(cat node_stats.json | jq -c .)" >> $GITHUB_ENV
 
-    - name: Commit Changes
+    - name: Commit Changes and Send Notifications
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}  # 请添加你的通知服务 Webhook URL 到 GitHub Secrets
       run: |
         # 输出 STATS_JSON 的内容，调试用
         echo "STATS_JSON: $STATS_JSON"
@@ -69,19 +69,28 @@ jobs:
         # 输出 timestamp，用于调试
         echo "Timestamp: $timestamp"
 
-        # 提交每个文件
+        # 处理每个文件并推送通知
         echo "$STATS_JSON" | jq -r '.stats | keys_unsorted[]' | while read filename; do
           line_count=$(echo "$STATS_JSON" | jq -r ".stats.\"$filename\"")
           
           # 强制添加文件
-          git add "$filename"
+          git add "$filename" || echo "文件 $filename 未找到，跳过添加"
           
           # 生成提交信息
-          commit_msg="更新 ${line_count} 个节点 (${timestamp})"
+          commit_msg="更新了 ${line_count} 个节点 (北京时间 ${timestamp})"
           
-          # 允许空提交
-          git commit -m "$commit_msg" --allow-empty
+          # 提交（允许空提交）
+          git commit -m "$commit_msg" --allow-empty || echo "提交 $filename 失败，可能是无变更"
+
+          # 发送单独的通知
+          if [ -n "$WEBHOOK_URL" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+              -d "{\"msg\": \"更新了 ${line_count} 个节点 (北京时间 ${timestamp}) - ${filename}\"}" \
+              "$WEBHOOK_URL"
+          else
+            echo "警告：未设置 WEBHOOK_URL，跳过通知推送"
+          fi
         done
         
         # 推送所有提交
-        git push origin main
+        git push origin main || echo "推送失败，请检查日志"
