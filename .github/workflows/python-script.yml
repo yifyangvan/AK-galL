@@ -49,20 +49,26 @@ jobs:
     - name: Execute Script
       run: |
         python dist/GH-AC-main.py
+        cat node_stats.json  # 输出 node_stats.json 文件的内容，便于调试
         echo "STATS_JSON=$(cat node_stats.json | jq -c .)" >> $GITHUB_ENV
 
     - name: Commit Changes
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # 输出 STATS_JSON 的内容，调试用
+        echo "STATS_JSON: $STATS_JSON"
+
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}
         
         # 读取统计信息
-        STATS_JSON=$GITHUB_ENV["STATS_JSON"]
         timestamp=$(echo "$STATS_JSON" | jq -r '.timestamp')
-        
+
+        # 输出 timestamp，用于调试
+        echo "Timestamp: $timestamp"
+
         # 提交每个文件
         echo "$STATS_JSON" | jq -r '.stats | keys_unsorted[]' | while read filename; do
           line_count=$(echo "$STATS_JSON" | jq -r ".stats.\"$filename\"")
