@@ -61,24 +61,22 @@ jobs:
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}
         
-        # 从 STATS_JSON 中提取 UTC 时间戳
+        # 从 STATS_JSON 中提取 UTC 时间戳并转换为北京时间
         utc_timestamp=$(echo "$STATS_JSON" | jq -r '.timestamp')
-        
-        # 转换为北京时间 (UTC+8)，确保正确解析
-        beijing_timestamp=$(date -u -d "$utc_timestamp 8 hours" '+%Y-%m-%d %H:%M:%S')
+        beijing_timestamp=$(date -d "$utc_timestamp +0 hours" '+%Y-%m-%d %H:%M:%S')
         echo "Beijing Timestamp: $beijing_timestamp"
 
         # 处理每个文件
         echo "$STATS_JSON" | jq -r '.stats | keys_unsorted[]' | while read filename; do
           line_count=$(echo "$STATS_JSON" | jq -r ".stats.\"$filename\"")
           git add "$filename" || echo "文件 $filename 未找到，跳过添加"
-          commit_msg="更新了 ${line_count} 个节点 北京时间 ${beijing_timestamp}"
+          commit_msg="更新了 ${line_count} 个节点 (北京时间 ${beijing_timestamp})"
           git commit -m "$commit_msg" --allow-empty || echo "提交 $filename 失败，可能是无变更"
           
-          # 发送通知，格式为“更新了 （行数）个节点 北京时间”
+          # 发送通知
           if [ -n "$WEBHOOK_URL" ]; then
             curl -X POST -H "Content-Type: application/json" \
-              -d "{\"msg\": \"更新了 ${line_count} 个节点 北京时间 ${beijing_timestamp} - ${filename}\"}" \
+              -d "{\"msg\": \"更新了 ${line_count} 个节点 (北京时间 ${beijing_timestamp}) - ${filename}\"}" \
               "$WEBHOOK_URL"
           else
             echo "警告：未设置 WEBHOOK_URL，跳过通知推送"
