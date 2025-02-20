@@ -62,27 +62,27 @@ jobs:
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}
         
-        # 从 STATS_JSON 中提取 UTC 时间戳并转换为北京时间
+        # 从 STATS_JSON 中提取 UTC 时间戳并转换为北京时间（仅用于 Git 提交）
         utc_timestamp=$(echo "$STATS_JSON" | jq -r '.timestamp')
         beijing_timestamp=$(date -u -d "$utc_timestamp 8 hours" '+%Y-%m-%d %H:%M:%S')
         echo "Beijing Timestamp: $beijing_timestamp"
 
-        # 构建简洁的 Telegram 推送消息，使用代码块
-        message="\`\`\`\n"
+        # 构建 Telegram 推送消息
+        message=""
         echo "$STATS_JSON" | jq -r '.stats | keys_unsorted[]' | while read filename; do
           line_count=$(echo "$STATS_JSON" | jq -r ".stats.\"$filename\"")
-          message="${message}${filename}: 更新了 ${line_count} 个节点\n"
+          # 使用 printf 添加换行符，确保格式正确
+          message=$(printf "${message}${filename}: 更新了 ${line_count} 个节点\n")
           
           # Git 提交
           git add "$filename" || echo "文件 $filename 未找到，跳过添加"
           commit_msg="更新了 ${line_count} 个节点 北京时间 ${beijing_timestamp}"
           git commit -m "$commit_msg" --allow-empty || echo "提交 $filename 失败，可能是无变更"
         done
-        message="${message}\`\`\`"
 
-        # 发送 Telegram 推送
+        # 发送 Telegram 推送（纯文本格式）
         curl -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-          -d "chat_id=${TELEGRAM_CHAT_ID}&text=${message}&parse_mode=Markdown" || echo "Telegram 推送失败，请检查 Token 或 Chat ID"
+          -d "chat_id=${TELEGRAM_CHAT_ID}&text=${message}" || echo "Telegram 推送失败，请检查 Token 或 Chat ID"
         
         # 推送 Git 变更
         git push origin main || echo "推送失败，请检查日志"
