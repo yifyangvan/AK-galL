@@ -48,8 +48,8 @@ jobs:
 
     - name: Execute Script
       run: |
-        python dist/GH-AC-main.py
-        echo "STATS_JSON=$(cat node_stats.json)" >> $GITHUB_ENV
+        # 运行 Python 脚本并输出 JSON 格式的统计信息
+        python dist/GH-AC-main.py > node_stats.json
 
     - name: Commit Changes
       env:
@@ -60,7 +60,6 @@ jobs:
         git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}
         
         # 读取统计信息
-        echo "$STATS_JSON" > node_stats.json
         timestamp=$(jq -r '.timestamp' node_stats.json)
         
         # 提交每个文件
@@ -71,7 +70,7 @@ jobs:
           git add "$filename"
           
           # 生成提交信息
-          commit_msg="更新了${line_count}节点 - ${filename} (${timestamp})"
+          commit_msg="更新了${line_count}个节点 - ${filename} (${timestamp})"
           
           # 允许空提交
           git commit -m "$commit_msg" --allow-empty
