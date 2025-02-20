@@ -49,7 +49,7 @@ jobs:
     - name: Execute Script
       run: |
         python dist/GH-AC-main.py
-        echo "STATS_JSON=$(cat node_stats.json)" >> $GITHUB_ENV
+        echo "STATS_JSON=$(cat node_stats.json | jq -c .)" >> $GITHUB_ENV
 
     - name: Commit Changes
       env:
@@ -60,7 +60,7 @@ jobs:
         git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}
         
         # 读取统计信息
-        STATS_JSON=$(cat node_stats.json)
+        STATS_JSON=$GITHUB_ENV["STATS_JSON"]
         timestamp=$(echo "$STATS_JSON" | jq -r '.timestamp')
         
         # 提交每个文件
