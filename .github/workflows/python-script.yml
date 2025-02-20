@@ -60,12 +60,12 @@ jobs:
         git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}
         
         # 读取统计信息
-        echo "$STATS_JSON" > node_stats.json
-        timestamp=$(jq -r '.timestamp' node_stats.json)
+        STATS_JSON=$(cat node_stats.json)
+        timestamp=$(echo "$STATS_JSON" | jq -r '.timestamp')
         
         # 提交每个文件
-        jq -r '.stats | keys_unsorted[]' node_stats.json | while read filename; do
-          line_count=$(jq -r ".stats.\"$filename\"" node_stats.json)
+        echo "$STATS_JSON" | jq -r '.stats | keys_unsorted[]' | while read filename; do
+          line_count=$(echo "$STATS_JSON" | jq -r ".stats.\"$filename\"")
           
           # 强制添加文件
           git add "$filename"
