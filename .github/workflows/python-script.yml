@@ -67,19 +67,19 @@ jobs:
         beijing_timestamp=$(date -u -d "$utc_timestamp 8 hours" '+%Y-%m-%d %H:%M:%S')
         echo "Beijing Timestamp: $beijing_timestamp"
 
-        # 构建tg推送消息
-        message="✨ *节点更新报告* ✨\n📡 *系统时间*: ${beijing_timestamp}\n\`\`\`\n推送内容\n\`\`\`\n"
+        # 构建简洁的 Telegram 推送消息，使用代码块
+        message="\`\`\`\n"
         echo "$STATS_JSON" | jq -r '.stats | keys_unsorted[]' | while read filename; do
           line_count=$(echo "$STATS_JSON" | jq -r ".stats.\"$filename\"")
-          message="${message}- ${filename}: 更新了 ${line_count} 个节点\n"
+          message="${message}${filename}: 更新了 ${line_count} 个节点\n"
           
           # Git 提交
           git add "$filename" || echo "文件 $filename 未找到，跳过添加"
           commit_msg="更新了 ${line_count} 个节点 北京时间 ${beijing_timestamp}"
           git commit -m "$commit_msg" --allow-empty || echo "提交 $filename 失败，可能是无变更"
         done
-        message="${message}----------------------------------------\n"
-        
+        message="${message}\`\`\`"
+
         # 发送 Telegram 推送
         curl -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
           -d "chat_id=${TELEGRAM_CHAT_ID}&text=${message}&parse_mode=Markdown" || echo "Telegram 推送失败，请检查 Token 或 Chat ID"
