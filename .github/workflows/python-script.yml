@@ -54,7 +54,7 @@ jobs:
     - name: Commit Changes and Send Notifications
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}  # 请添加你的通知服务 Webhook URL 到 GitHub Secrets
+        WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}  # 请确保已在 GitHub Secrets 中配置
       run: |
         # 输出 STATS_JSON 的内容，调试用
         echo "STATS_JSON: $STATS_JSON"
@@ -63,11 +63,14 @@ jobs:
         git config --global user.email "actions@github.com"
         git remote set-url origin https://x-access-token:$GH_TOKEN@github.com/${{ github.repository }}
         
-        # 读取统计信息
-        timestamp=$(echo "$STATS_JSON" | jq -r '.timestamp')
+        # 从 STATS_JSON 中提取 UTC 时间戳
+        utc_timestamp=$(echo "$STATS_JSON" | jq -r '.timestamp')
 
-        # 输出 timestamp，用于调试
-        echo "Timestamp: $timestamp"
+        # 转换为北京时间 (UTC+8)
+        beijing_timestamp=$(date -d "$utc_timestamp +8 hours" '+%Y-%m-%d %H:%M:%S')
+
+        # 输出转换后的时间戳，用于调试
+        echo "Beijing Timestamp: $beijing_timestamp"
 
         # 处理每个文件并推送通知
         echo "$STATS_JSON" | jq -r '.stats | keys_unsorted[]' | while read filename; do
@@ -77,7 +80,7 @@ jobs:
           git add "$filename" || echo "文件 $filename 未找到，跳过添加"
           
           # 生成提交信息
-          commit_msg="更新了 ${line_count} 个节点 (北京时间 ${timestamp})"
+          commit_msg="更新了 ${line_count} 个节点 (北京时间 ${beijing_timestamp})"
           
           # 提交（允许空提交）
           git commit -m "$commit_msg" --allow-empty || echo "提交 $filename 失败，可能是无变更"
@@ -85,7 +88,7 @@ jobs:
           # 发送单独的通知
           if [ -n "$WEBHOOK_URL" ]; then
             curl -X POST -H "Content-Type: application/json" \
-              -d "{\"msg\": \"更新了 ${line_count} 个节点 (北京时间 ${timestamp}) - ${filename}\"}" \
+              -d "{\"msg\": \"更新了 ${line_count} 个节点 (北京时间 ${beijing_timestamp}) - ${filename}\"}" \
               "$WEBHOOK_URL"
           else
             echo "警告：未设置 WEBHOOK_URL，跳过通知推送"
