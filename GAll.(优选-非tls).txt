@@ -63,7 +63,6 @@ vless://f171d615-4544-4823-b049-369b9e655f58@ip.doolloh.info:8443?security=&type
 vless://f171d615-4544-4823-b049-369b9e655f58@ip.doolloh.info:2096?security=&type=ws&host=S20.blancerconfgure.info&path=%2F&sni=S20.blancerconfgure.info&alpn=h3,h2&fp=chrome&encryption=none#server_242
 vless://f171d615-4544-4823-b049-369b9e655f58@ip.doolloh.info:8443?security=&type=ws&host=S20.blancerconfgure.info&path=%2F&sni=S20.blancerconfgure.info&alpn=h3,h2&fp=chrome&encryption=none#server_247
 vless://f171d615-4544-4823-b049-369b9e655f58@ip.doolloh.info:2096?security=&type=ws&host=S19.blancerconfgure.info&path=%2F&sni=S19.blancerconfgure.info&alpn=h3,h2&fp=chrome&encryption=none#server_249
-vless://9fdc6f83-bfbd-40dd-8e4e-1678ee20351c@inthenameofgodfragment.ignorelist.com:443?security=auto&type=ws&host=fari.ati-app.com&path=%2Fwss&sni=fari.ati-app.com&alpn=h3,h2,http/1.1&fp=chrome&encryption=none#server_257
 vless://f171d615-4544-4823-b049-369b9e655f58@ip.doolloh.info:8443?security=&type=ws&host=S21.blancerconfgure.info&path=%2F&sni=S21.blancerconfgure.info&alpn=h3,h2&fp=chrome&encryption=none#server_269
 vless://f171d615-4544-4823-b049-369b9e655f58@ip.doolloh.info:8443?security=&type=ws&host=S18.blancerconfgure.info&path=%2F&sni=S18.blancerconfgure.info&alpn=h3,h2&fp=chrome&encryption=none#server_276
 vless://f171d615-4544-4823-b049-369b9e655f58@ip.doolloh.info:2096?security=&type=ws&host=S21.blancerconfgure.info&path=%2F&sni=S21.blancerconfgure.info&alpn=h3,h2&fp=chrome&encryption=none#server_284
